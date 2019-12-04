@@ -42,12 +42,16 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Iterables;
 
 public class CompilerFileManager extends ForwardingJavaFileManager<StandardJavaFileManager> {
 
-    private static final PackageNode packageRoot = new PackageNode(null);
-    private static final Map<String, byte[]> classpath = new ConcurrentHashMap<>();
+    private final Logger log = Logger.getLogger(getClass());
+
+    private final PackageNode packageRoot = new PackageNode(null);
+    private final Map<String, byte[]> classpath = new ConcurrentHashMap<>();
     private final Map<String, JavaClass> compileResults = new ConcurrentHashMap<>();
 
     public CompilerFileManager(JavaCompiler compiler) throws IOException {
@@ -147,25 +151,33 @@ public class CompilerFileManager extends ForwardingJavaFileManager<StandardJavaF
 	return packageNode != null ? packageNode : null;
     }
 
-    public Map<String, byte[]> getCompiledClasses() {
+    public Map<String, byte[]> getCompileResults() {
 	final Map<String, byte[]> classes = new HashMap<>();
 	for (Entry<String, JavaClass> entry : compileResults.entrySet()) {
+	    if (entry.getValue().getBytes() != null) {
+		writeInFileSystem(entry.getValue());
+	    }
 	    classes.put(entry.getKey(), entry.getValue().getBytes());
 	}
 	return classes;
     }
 
-    @Override
-    public void flush() throws IOException {
-	final FileSystem fs = CompilerFactory.fileSystem();
-	for (Entry<String, JavaClass> entry : compileResults.entrySet()) {
-	    final JavaClass jc = entry.getValue();
-	    final int last = jc.getName().lastIndexOf("/");
-	    final String foldername = jc.getName().substring(0, last + 1); // include /
+    public void writeInFileSystem(JavaClass javaClass) {
+	final String filename = javaClass.getName();
+	final byte[] bytes = javaClass.getBytes();
+	try {
+	    final FileSystem fs = CompilerFactory.fileSystem();
+	    final int last = filename.lastIndexOf("/");
+	    final String foldername = filename.substring(0, last + 1); // include /
 	    Files.createDirectories(fs.getPath(foldername));
-	    final Path path = fs.getPath("/", jc.getName());
+	    final Path path = fs.getPath("/", filename);
+	    if (Files.exists(path)) {
+		Files.delete(path);
+	    }
 	    Files.createFile(path);
-	    Files.write(path, jc.getBytes());
+	    Files.write(path, bytes);
+	} catch (IOException e) {
+	    log.warn("Cannot write file '" + filename + "' into virtualized file system.", e);
 	}
     }
 }

@@ -21,48 +21,61 @@
  *******************************************************************************/
 package org.classcompiler.frontend;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Map.Entry;
 
 import org.classcompiler.ClassCompiler;
 import org.classcompiler.Utils;
+import org.classcompiler.compiler.Compilers;
+import org.classcompiler.compiler.JavaSource;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
-
+import kong.unirest.HttpResponse;
 import kong.unirest.MultipartBody;
 import kong.unirest.Unirest;
 
 public class TestClassCompilerController {
 
+    @BeforeClass
+    public static void pre() throws Exception {
+	ClassCompiler.main();
+    }
+
     @Test
     public void testControllerCompileRequest() throws Exception {
-	ClassCompiler.main();
+	uploadDependency();
 
-	sendPicocliDependency();
+	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";
+	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/CompileMe.java");
 
-	final String fullyQualifiedClassName = "org.classcompiler.test.example.CompileMe";
-	final String javaSource = new String(
-		Files.readAllBytes(Paths.get(getClass().getResource("/CompileMe.java").toURI())), Charsets.UTF_8);
-	final JavaCompileRequest jcr = JavaCompileRequest.of(fullyQualifiedClassName, javaSource);
+	final JavaCompileRequest jcr = JavaCompileRequest.of(fullyQualifiedName, javaSource);
 
-	Unirest.post("http://localhost:8080/compile")//
+	final HttpResponse<String> res = Unirest.post("http://localhost:8080/compile")//
 		.header("Content-Type", "application/json")//
 		.body(Collections.singletonList(jcr))//
 		.asString();
+	assertThat(res.getStatus(), is(200));
     }
 
-    private void sendPicocliDependency() throws IOException {
-	for (Entry<String, byte[]> entry : Utils
-		.parseJarFile("d:\\dev\\repo\\info\\picocli\\picocli\\4.1.1\\picocli-4.1.1.jar").entrySet()) {
+    // Compile the version dependency in test to upload its class bytes
+    private void uploadDependency() throws IOException, URISyntaxException {
+	final String fullyQualifiedName = "org.classcompiler.compiler.SomeExternalDependency";
+	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/SomeExternalDependency.java");
+
+	for (Entry<String, byte[]> entry : Compilers
+		.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource))).entrySet()) {
 	    final MultipartBody req = Unirest//
 		    .post("http://localhost:8080/upload")//
-		    .field("file", new ByteArrayInputStream(entry.getValue()), entry.getKey());
-	    req.asEmpty();
+		    .field("file", new ByteArrayInputStream(entry.getValue()), entry.getKey() + ".class");
+	    final HttpResponse<?> res = req.asEmpty();
+	    assertThat(res.getStatus(), is(200));
 	}
     }
 }

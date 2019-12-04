@@ -40,7 +40,7 @@ public class Compilers {
 	final ByteArrayOutputStream err = new ByteArrayOutputStream();
 	final CompilationTask task = compiler.getTask(new OutputStreamWriter(err), cfm, null, null, null, sources);
 	if (task.call()) {
-	    return cfm.getCompiledClasses();
+	    return cfm.getCompileResults();
 	} else {
 	    throw new IllegalStateException("Fail '" + new String(err.toByteArray(), Charsets.UTF_8) + "'.");
 	}

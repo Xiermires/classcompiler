@@ -23,30 +23,29 @@ package org.classcompiler.compiler;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Collections;
 
 import org.classcompiler.Utils;
 import org.junit.Test;
 
-import com.google.common.base.Charsets;
-
 public class TestClassCompiler {
+
+    @Test(expected = IllegalStateException.class)
+    public void testCompileRequestFails() throws IOException, URISyntaxException {
+	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";
+	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/CompileMe.java");
+
+	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource)));
+    }
 
     @Test
     public void testCompileRequest() throws IOException, URISyntaxException {
-	loadPicocliDependency();
+	Utils.addToCompilerClasspath("org.classcompiler.compiler.SomeExternalDependency",
+		"/SomeExternalDependency.java");
 
-	final String fullyQualifiedClassName = "org.classcompiler.test.example.CompileMe";
-	final String javaSource = new String(
-		Files.readAllBytes(Paths.get(getClass().getResource("/CompileMe.java").toURI())), Charsets.UTF_8);
+	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";
+	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/CompileMe.java");
 
-	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedClassName, javaSource)));
-    }
-
-    private void loadPicocliDependency() throws IOException {
-	final CompilerFileManager cfm = CompilerFactory.compilerFileManager();
-	cfm.addToClasspath(Utils.parseJarFile("d:\\dev\\repo\\info\\picocli\\picocli\\4.1.1\\picocli-4.1.1.jar"));
+	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource)));
     }
 }

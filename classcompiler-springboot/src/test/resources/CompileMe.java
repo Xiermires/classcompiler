@@ -21,8 +21,6 @@
  *******************************************************************************/
 package org.classcompiler.compiler;
 
-//import org.classcompiler.compiler.SomeExternalDepedency;
-
 public class CompileMe {
     
     @SomeExternalDependency

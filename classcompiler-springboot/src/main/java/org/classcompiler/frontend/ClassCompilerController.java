@@ -22,18 +22,14 @@
 package org.classcompiler.frontend;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.classcompiler.compiler.Compilers;
 import org.classcompiler.compiler.CompilerFactory;
 import org.classcompiler.compiler.CompilerFileManager;
+import org.classcompiler.compiler.Compilers;
 import org.classcompiler.compiler.JavaSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,16 +50,7 @@ public class ClassCompilerController {
 	for (JavaCompileRequest jcr : jcrs) {
 	    sources.add(new JavaSource(jcr.getFullyQualifiedClassName(), jcr.getJavaSource()));
 	}
-	Compilers.compile(sources);
-
-	final Map<String, byte[]> compileResult = new HashMap<>();
-	final FileSystem fs = CompilerFactory.fileSystem();
-	for (JavaSource source : sources) {
-	    final String classname = source.getName().replace(".java", ".class");
-	    final Path path = fs.getPath("/", classname);
-	    compileResult.put(classname, Files.readAllBytes(path));
-	}
-	return new ResponseEntity<>(compileResult, HttpStatus.OK);
+	return new ResponseEntity<>(Compilers.compile(sources), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
@@ -73,10 +60,10 @@ public class ClassCompilerController {
 	if (fullyQualifiedName.endsWith(".jar")) { // handle jar
 	    // TODO jar unpack + load support
 	} else if (fullyQualifiedName.endsWith(".class")) { // handle class
-	    cfm.addToClasspath(fullyQualifiedName.replace(".class", ""), file.getBytes());
+	    cfm.addToClasspath(fullyQualifiedName.substring(0, fullyQualifiedName.length() - 6), file.getBytes());
 	} else {
 	    throw new UnsupportedOperationException("Unsupported file format { not jar / class }.");
 	}
-	return new ResponseEntity<String>("Success", HttpStatus.OK);
+	return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 }

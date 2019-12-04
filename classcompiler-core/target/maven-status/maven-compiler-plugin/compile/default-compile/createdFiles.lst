@@ -1,9 +1,6 @@
 org\classcompiler\compiler\CompilerFileManager.class
-org\classcompiler\frontend\JavaCompileRequest.class
-org\classcompiler\ClassCompiler.class
+org\classcompiler\compiler\Compilers.class
 org\classcompiler\compiler\JavaSource.class
 org\classcompiler\compiler\CompilerFactory.class
 org\classcompiler\compiler\JavaClass.class
-org\classcompiler\frontend\ClassCompilerController.class
-org\classcompiler\compiler\Compilers.class
 org\classcompiler\compiler\PackageNode.class

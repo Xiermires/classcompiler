@@ -19,13 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *******************************************************************************/
-package org.classcompiler.test.example;
+package org.classcompiler.compiler;
 
-import picocli.CommandLine.Option;
+//import org.classcompiler.compiler.SomeExternalDepedency;
 
 public class CompileMe {
     
-    @Option(names = "-c", description = "create a new archive")
+    @SomeExternalDependency
     private boolean create;
     
     public static void main(String... args) {

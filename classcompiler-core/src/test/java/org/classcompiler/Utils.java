@@ -21,46 +21,39 @@
  *******************************************************************************/
 package org.classcompiler;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map.Entry;
+
+import org.classcompiler.compiler.CompilerFactory;
+import org.classcompiler.compiler.CompilerFileManager;
+import org.classcompiler.compiler.Compilers;
+import org.classcompiler.compiler.JavaSource;
+
+import com.google.common.base.Charsets;
 
 public class Utils {
 
-    public static Map<String, byte[]> parseJarFile(String jarFileFilename) throws IOException {
-	final Map<String, byte[]> classpath = new HashMap<>();
-	try (JarFile jar = new JarFile(jarFileFilename)) {
-	    final Enumeration<JarEntry> entries = jar.entries();
-	    while (entries.hasMoreElements()) {
-		final JarEntry entry = entries.nextElement();
-		if (entry.getName().endsWith(".class")) {
-		    final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		    copyStream(jar.getInputStream(entry), baos);
-		    classpath.put(entry.getName(), baos.toByteArray());
-		}
-	    }
+    public static void addToCompilerClasspath(CompilerFileManager cfm, String fullyQualifiedName, String resourceName)
+	    throws IOException, URISyntaxException {
+	final JavaSource javaSource = new JavaSource(fullyQualifiedName,
+		readJavaSource(fullyQualifiedName, resourceName));
+
+	for (Entry<String, byte[]> entry : Compilers.compile(Collections.singletonList(javaSource)).entrySet()) {
+	    cfm.addToClasspath(entry.getKey(), entry.getValue());
 	}
-	return classpath;
+    }
+    
+    public static void addToCompilerClasspath(String fullyQualifiedName, String resourceName)
+	    throws IOException, URISyntaxException {
+	addToCompilerClasspath(CompilerFactory.compilerFileManager(), fullyQualifiedName, resourceName);
     }
 
-    private static void copyStream(InputStream is, ByteArrayOutputStream baos) throws IOException {
-	final byte[] buffer = new byte[4096];
-	int len;
-	try {
-	    while ((len = is.read(buffer)) != -1) {
-		baos.write(buffer, 0, len);
-	    }
-	} finally {
-	    try {
-		is.close();
-	    } catch (Exception e) {
-		// ignore
-	    }
-	}
+    public static String readJavaSource(String fullyQualfiedName, String resourceName)
+	    throws IOException, URISyntaxException {
+	return new String(Files.readAllBytes(Paths.get(Utils.class.getResource(resourceName).toURI())), Charsets.UTF_8);
     }
 }
