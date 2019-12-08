@@ -24,7 +24,6 @@ package org.classcompiler.compiler;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.nio.file.FileSystem;
 import java.util.Collection;
 import java.util.Map;
 
@@ -37,7 +36,7 @@ import com.google.common.base.Charsets;
 
 public class Compilers {
 
-    public static Map<String, byte[]> compile(Collection<JavaSource> sources, FileSystem fileSystem)
+    public static Map<String, byte[]> compile(Collection<JavaSource> sources, FileSystemWrapper fileSystem)
 	    throws IllegalStateException, IOException {
 
 	final JavaCompiler compiler = new EclipseCompiler();

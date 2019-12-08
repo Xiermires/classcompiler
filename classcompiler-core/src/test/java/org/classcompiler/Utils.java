@@ -43,7 +43,7 @@ public class Utils {
 		readJavaSource(fullyQualifiedName, resourceName));
 
 	for (Entry<String, byte[]> entry : Compilers.compile(Collections.singletonList(javaSource)).entrySet()) {
-	    cfm.addClass(entry.getKey(), entry.getValue(), true);
+	    cfm.getFileSystemWrapper().addClass(entry.getKey(), entry.getValue(), true);
 	}
     }
 

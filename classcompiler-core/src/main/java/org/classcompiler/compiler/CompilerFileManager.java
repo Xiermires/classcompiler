@@ -23,8 +23,6 @@ package org.classcompiler.compiler;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -54,72 +52,55 @@ public class CompilerFileManager extends ForwardingJavaFileManager<StandardJavaF
 
     private final Map<String, JavaClass> compileResults = new ConcurrentHashMap<>();
 
-    private final FileSystem cp;
-    private final ClassLoader cl;
+    private final FileSystemWrapper cp;
 
     public CompilerFileManager(JavaCompiler compiler) throws IOException {
 	super(getFileManager(compiler));
 	super.fileManager.setLocation(StandardLocation.CLASS_PATH, Collections.emptyList());
 	cp = FileSystems.fileSystem();
-	cl = new NIOClassLoader(cp, Thread.currentThread().getContextClassLoader());
     }
 
-    public CompilerFileManager(JavaCompiler compiler, FileSystem fs) throws IOException {
+    public CompilerFileManager(JavaCompiler compiler, FileSystemWrapper fs) throws IOException {
 	super(getFileManager(compiler));
 	super.fileManager.setLocation(StandardLocation.CLASS_PATH, Collections.emptyList());
 	cp = fs;
-	cl = new NIOClassLoader(fs, Thread.currentThread().getContextClassLoader());
-    }
-
-    @Override
-    public ClassLoader getClassLoader(Location location) {
-	return cl;
     }
 
     private static StandardJavaFileManager getFileManager(JavaCompiler compiler) {
-	StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(null, null, null);
+	final StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(null, null, null);
 	return standardFileManager;
     }
 
-    public void addClasses(Map<String, byte[]> newClasses) throws IOException {
-	for (Entry<String, byte[]> entry : newClasses.entrySet()) {
-	    addClass(entry.getKey(), entry.getValue(), true);
-	}
-    }
-
-    public void addClass(String fullyQualifiedName, byte[] bytes, boolean replace) throws IOException {
-	if (!fullyQualifiedName.endsWith(Kind.CLASS.extension)) {
-	    fullyQualifiedName = unixfy(fullyQualifiedName, Kind.CLASS.extension);
-	} else {
-	    if (fullyQualifiedName.indexOf('.') != -1) {
-		fullyQualifiedName = unixfy(fullyQualifiedName.substring(0, fullyQualifiedName.length() - 6),
-			Kind.CLASS.extension);
-	    }
-	}
-
-	// Write to FileSystem
-	final Path path = cp.getPath(fullyQualifiedName);
-	if (Files.exists(path)) {
-	    if (!replace) {
-		throw new FileAlreadyExistsException(path.toString());
-	    }
-	    Files.delete(path);
-	}
-	Files.createDirectories(path.getParent());
-	Files.createFile(path);
-	Files.write(path, bytes);
-    }
-
-    private String unixfy(String fullyQualifiedName, String suffix) {
-	return fullyQualifiedName.replace('.', '/') + suffix;
+    public FileSystemWrapper getFileSystemWrapper() {
+	return cp;
     }
 
     @Override
     public JavaFileObject getJavaFileForInput(Location location, String className, Kind kind) throws IOException {
 	if (Kind.CLASS.equals(kind)) {
 	    final Path path = cp.getPath(className + Kind.CLASS.extension);
-	    if (Files.exists(path) && !Files.isDirectory(path)) {
+	    if (Files.exists(path)) {
 		return new JavaClass(className, Files.readAllBytes(path));
+	    }
+
+	    // try find a source file that applies to className and compile it
+	    final int innerClassDefinedAt = className.indexOf('$');
+	    final String leadingClass;
+	    if (innerClassDefinedAt != -1) {
+		leadingClass = className.substring(0, innerClassDefinedAt);
+	    } else {
+		leadingClass = className;
+	    }
+
+	    final Path source = cp.getPath(leadingClass + Kind.SOURCE.extension);
+	    if (Files.exists(source)) {
+		final String sourcePath = source.toString();
+		final List<JavaSource> sources = Collections.singletonList(new JavaSource(
+			sourcePath.substring(0, sourcePath.lastIndexOf('.')), new String(Files.readAllBytes(source))));
+		final Map<String, byte[]> results = Compilers.compile(sources, cp);
+		if (!results.isEmpty()) {
+		    return new JavaClass(className, results.get(className.replace('/', '.')));
+		}
 	    }
 	}
 	return super.getJavaFileForInput(location, className, kind);
@@ -128,7 +109,6 @@ public class CompilerFileManager extends ForwardingJavaFileManager<StandardJavaF
     @Override
     public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind, FileObject sibling)
 	    throws IOException {
-
 	final JavaClass javaClass = new JavaClass(className);
 	compileResults.put(className.replaceAll("/", "."), javaClass);
 	return javaClass;
@@ -137,7 +117,6 @@ public class CompilerFileManager extends ForwardingJavaFileManager<StandardJavaF
     @Override
     public Iterable<JavaFileObject> list(Location location, String packageName, Set<Kind> kinds, boolean recurse)
 	    throws IOException {
-
 	final List<JavaFileObject> results = getFiles(cp.getPath(packageName), recurse);
 	Iterables.addAll(results, fileManager.list(location, packageName, kinds, recurse));
 	return results;
@@ -164,7 +143,7 @@ public class CompilerFileManager extends ForwardingJavaFileManager<StandardJavaF
 	    final JavaClass javaClass = entry.getValue();
 	    if (javaClass.getBytes() != null) {
 		try {
-		    addClass(javaClass.getName(), javaClass.getBytes(), true);
+		    cp.addClass(javaClass.getName(), javaClass.getBytes(), true);
 		} catch (IOException e) {
 		    log.warn("Couldn't write class file '" + javaClass.getName() + "' into file system.");
 		}

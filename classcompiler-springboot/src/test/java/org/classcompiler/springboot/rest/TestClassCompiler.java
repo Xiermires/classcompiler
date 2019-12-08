@@ -48,7 +48,7 @@ public class TestClassCompiler {
     }
 
     @Test
-    public void testCompile() throws Exception {
+    public void shouldCompile() throws Exception {
 	uploadDependency();
 
 	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";

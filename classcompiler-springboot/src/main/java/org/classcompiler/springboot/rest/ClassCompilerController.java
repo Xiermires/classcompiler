@@ -50,7 +50,7 @@ public class ClassCompilerController {
 	    if (fullyQualifiedName.endsWith(".jar")) { // handle jar
 		// TODO jar unpack + load support
 	    } else if (fullyQualifiedName.endsWith(".class")) { // handle class
-		cfm.addClass(fullyQualifiedName, file.getBytes(), true);
+		cfm.getFileSystemWrapper().addClass(fullyQualifiedName, file.getBytes(), true);
 	    } else {
 		throw new UnsupportedOperationException("Unsupported file format { not jar / class }.");
 	    }

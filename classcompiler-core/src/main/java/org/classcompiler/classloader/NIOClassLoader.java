@@ -1,9 +1,11 @@
-package org.classcompiler.compiler;
+package org.classcompiler.classloader;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import javax.tools.JavaFileObject.Kind;
 
 import org.apache.log4j.Logger;
 
@@ -13,15 +15,14 @@ public class NIOClassLoader extends ClassLoader {
 
     private final FileSystem fs;
 
-    public NIOClassLoader(FileSystem fs, ClassLoader parent) {
-	super(parent);
+    public NIOClassLoader(FileSystem fs) {
+	super(Thread.currentThread().getContextClassLoader());
 	this.fs = fs;
     }
 
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
-	name = name.replace('.', '/');
-	final Path path = fs.getPath("/", name);
+	final Path path = fs.getPath("/", name.replace('.', '/') + Kind.CLASS.extension);
 	if (Files.exists(path)) {
 	    byte[] bytes;
 	    try {

@@ -34,16 +34,16 @@ import com.google.common.jimfs.Jimfs;
 public class TestClassCompiler {
 
     @Test(expected = IllegalStateException.class)
-    public void testCompileFails() throws IOException, URISyntaxException {
+    public void shouldFail() throws IOException, URISyntaxException {
 	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";
 	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/CompileMe.java");
 
 	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource)),
-		Jimfs.newFileSystem(Configuration.unix()));
+		new FileSystemWrapper(Jimfs.newFileSystem(Configuration.unix())));
     }
 
     @Test
-    public void testCompile() throws IOException, URISyntaxException {
+    public void shouldCompile() throws IOException, URISyntaxException {
 	Utils.addToCompilerClasspath("org.classcompiler.compiler.SomeExternalDependency",
 		"/SomeExternalDependency.java");
 
@@ -51,5 +51,21 @@ public class TestClassCompiler {
 	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/CompileMe.java");
 
 	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource)));
+    }
+
+    @Test
+    public void shouldCompileDependencyOnDemand() throws IOException, URISyntaxException {
+	final FileSystemWrapper fs = new FileSystemWrapper(Jimfs.newFileSystem(Configuration.unix()));
+
+	final String dependencyFullyQualifiedName = "org.classcompiler.compiler.SomeExternalDependency";
+	final String dependencyJavaSource = Utils.readJavaSource(dependencyFullyQualifiedName,
+		"/SomeExternalDependency.java");
+
+	fs.addSource(dependencyFullyQualifiedName, dependencyJavaSource, false);
+
+	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";
+	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/CompileMe.java");
+
+	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource)), fs);
     }
 }
