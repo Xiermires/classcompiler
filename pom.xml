@@ -14,11 +14,13 @@
 	<modules>
 		<module>classcompiler-core</module>
 		<module>classcompiler-springboot</module>
+		<module>classcompiler-zeromq</module>
 	</modules>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<parent.relativePath>../</parent.relativePath>
+		<quarkus.version>1.0.1.Final</quarkus.version>
 	</properties>
 
 	<dependencyManagement>
@@ -45,11 +47,6 @@
 				<scope>test</scope>
 			</dependency>
 			<dependency>
-				<groupId>info.picocli</groupId>
-				<artifactId>picocli</artifactId>
-				<version>4.1.1</version>
-			</dependency>
-			<dependency>
 				<groupId>com.konghq</groupId>
 				<artifactId>unirest-java</artifactId>
 				<version>3.2.00</version>
@@ -70,14 +67,15 @@
 				<artifactId>log4j</artifactId>
 				<version>1.2.17</version>
 			</dependency>
+			<dependency>
+				<groupId>org.zeromq</groupId>
+				<artifactId>jeromq</artifactId>
+				<version>0.5.1</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<dependencies>
-		<dependency>
-			<groupId>com.google.jimfs</groupId>
-			<artifactId>jimfs</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

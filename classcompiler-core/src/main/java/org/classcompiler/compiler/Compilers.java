@@ -22,20 +22,26 @@
 package org.classcompiler.compiler;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.FileSystem;
 import java.util.Collection;
 import java.util.Map;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 
+import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
+
 import com.google.common.base.Charsets;
 
 public class Compilers {
 
-    public static Map<String, byte[]> compile(Collection<JavaSource> sources) throws IllegalStateException {
-	final JavaCompiler compiler = CompilerFactory.compiler();
-	final CompilerFileManager cfm = CompilerFactory.compilerFileManager(compiler);
+    public static Map<String, byte[]> compile(Collection<JavaSource> sources, FileSystem fileSystem)
+	    throws IllegalStateException, IOException {
+
+	final JavaCompiler compiler = new EclipseCompiler();
+	final CompilerFileManager cfm = new CompilerFileManager(compiler, fileSystem);
 
 	final ByteArrayOutputStream err = new ByteArrayOutputStream();
 	final CompilationTask task = compiler.getTask(new OutputStreamWriter(err), cfm, null, null, null, sources);
@@ -44,5 +50,10 @@ public class Compilers {
 	} else {
 	    throw new IllegalStateException("Fail '" + new String(err.toByteArray(), Charsets.UTF_8) + "'.");
 	}
+    }
+
+    public static Map<String, byte[]> compile(Collection<JavaSource> sources)
+	    throws IllegalStateException, IOException {
+	return compile(sources, FileSystems.fileSystem());
     }
 }

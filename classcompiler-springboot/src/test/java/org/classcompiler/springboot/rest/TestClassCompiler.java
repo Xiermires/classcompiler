@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *******************************************************************************/
-package org.classcompiler.frontend;
+package org.classcompiler.springboot.rest;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -30,7 +30,6 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Map.Entry;
 
-import org.classcompiler.ClassCompiler;
 import org.classcompiler.Utils;
 import org.classcompiler.compiler.Compilers;
 import org.classcompiler.compiler.JavaSource;
@@ -41,7 +40,7 @@ import kong.unirest.HttpResponse;
 import kong.unirest.MultipartBody;
 import kong.unirest.Unirest;
 
-public class TestClassCompilerController {
+public class TestClassCompiler {
 
     @BeforeClass
     public static void pre() throws Exception {
@@ -49,7 +48,7 @@ public class TestClassCompilerController {
     }
 
     @Test
-    public void testControllerCompileRequest() throws Exception {
+    public void testCompile() throws Exception {
 	uploadDependency();
 
 	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";

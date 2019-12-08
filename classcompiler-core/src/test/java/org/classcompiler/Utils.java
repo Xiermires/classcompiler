@@ -28,10 +28,10 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map.Entry;
 
-import org.classcompiler.compiler.CompilerFactory;
 import org.classcompiler.compiler.CompilerFileManager;
 import org.classcompiler.compiler.Compilers;
 import org.classcompiler.compiler.JavaSource;
+import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 
 import com.google.common.base.Charsets;
 
@@ -43,13 +43,13 @@ public class Utils {
 		readJavaSource(fullyQualifiedName, resourceName));
 
 	for (Entry<String, byte[]> entry : Compilers.compile(Collections.singletonList(javaSource)).entrySet()) {
-	    cfm.addToClasspath(entry.getKey(), entry.getValue());
+	    cfm.addClass(entry.getKey(), entry.getValue(), true);
 	}
     }
-    
+
     public static void addToCompilerClasspath(String fullyQualifiedName, String resourceName)
 	    throws IOException, URISyntaxException {
-	addToCompilerClasspath(CompilerFactory.compilerFileManager(), fullyQualifiedName, resourceName);
+	addToCompilerClasspath(new CompilerFileManager(new EclipseCompiler()), fullyQualifiedName, resourceName);
     }
 
     public static String readJavaSource(String fullyQualfiedName, String resourceName)

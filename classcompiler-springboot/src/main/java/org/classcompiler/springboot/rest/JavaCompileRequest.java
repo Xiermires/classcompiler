@@ -19,17 +19,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *******************************************************************************/
-package org.classcompiler;
+package org.classcompiler.springboot.rest;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+public class JavaCompileRequest {
 
-@SpringBootApplication
-public class ClassCompiler {
+    private String fullyQualifiedClassName;
+    private String javaSource;
 
-    public static void main(String... params) throws Exception {
+    public static JavaCompileRequest of(String fullyQualifiedClassName, String javaSource) {
+	final JavaCompileRequest jcr = new JavaCompileRequest();
+	jcr.setFullyQualifiedClassName(fullyQualifiedClassName);
+	jcr.setJavaSource(javaSource);
+	return jcr;
+    }
 
-	// Spring start.
-	SpringApplication.run(ClassCompiler.class, params);
+    public String getFullyQualifiedClassName() {
+	return fullyQualifiedClassName;
+    }
+
+    public void setFullyQualifiedClassName(String fullyQualifiedClassName) {
+	this.fullyQualifiedClassName = fullyQualifiedClassName;
+    }
+
+    public String getJavaSource() {
+	return javaSource;
+    }
+
+    public void setJavaSource(String javaSource) {
+	this.javaSource = javaSource;
     }
 }

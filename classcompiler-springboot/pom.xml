@@ -40,10 +40,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.classcompiler</groupId>
 			<artifactId>classcompiler-core</artifactId>
 			<version>${project.version}</version>

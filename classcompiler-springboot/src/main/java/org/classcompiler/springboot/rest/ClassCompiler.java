@@ -19,70 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *******************************************************************************/
-package org.classcompiler.compiler;
+package org.classcompiler.springboot.rest;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-public class PackageNode {
+@SpringBootApplication
+public class ClassCompiler {
 
-    private String name;
-    private PackageNode parent;
-    private Map<String, PackageNode> children;
-    private List<JavaClass> classes;
+    public static void main(String... params) throws Exception {
 
-    public PackageNode(String name) {
-	this.name = name;
-	this.parent = null;
-	this.children = new HashMap<>();
-	this.classes = new ArrayList<>();
-    }
-
-    public String getName() {
-	return name;
-    }
-
-    public void setName(String name) {
-	this.name = name;
-    }
-
-    public List<JavaClass> getClasses() {
-	return classes;
-    }
-
-    public PackageNode getParent() {
-	return parent;
-    }
-
-    public void setParent(PackageNode parent) {
-	this.parent = parent;
-    }
-
-    public boolean hasParent() {
-	return parent != null;
-    }
-
-    public void addChild(PackageNode child) {
-	children.put(child.getName(), child);
-    }
-    
-    public PackageNode getChild(String name) {
-	return children.get(name);
-    }
-
-    public Collection<PackageNode> getChildren() {
-	return children.values();
-    }
-
-    public boolean hasChildren() {
-	return !children.isEmpty();
-    }
-
-    @Override
-    public String toString() {
-	return name;
+	// Spring start.
+	SpringApplication.run(ClassCompiler.class, params);
     }
 }

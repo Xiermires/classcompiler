@@ -28,18 +28,22 @@ import java.util.Collections;
 import org.classcompiler.Utils;
 import org.junit.Test;
 
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
+
 public class TestClassCompiler {
 
     @Test(expected = IllegalStateException.class)
-    public void testCompileRequestFails() throws IOException, URISyntaxException {
+    public void testCompileFails() throws IOException, URISyntaxException {
 	final String fullyQualifiedName = "org.classcompiler.compiler.CompileMe";
 	final String javaSource = Utils.readJavaSource(fullyQualifiedName, "/CompileMe.java");
 
-	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource)));
+	Compilers.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource)),
+		Jimfs.newFileSystem(Configuration.unix()));
     }
 
     @Test
-    public void testCompileRequest() throws IOException, URISyntaxException {
+    public void testCompile() throws IOException, URISyntaxException {
 	Utils.addToCompilerClasspath("org.classcompiler.compiler.SomeExternalDependency",
 		"/SomeExternalDependency.java");
 

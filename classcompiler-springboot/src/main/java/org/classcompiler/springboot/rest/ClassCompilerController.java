@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *******************************************************************************/
-package org.classcompiler.frontend;
+package org.classcompiler.springboot.rest;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,10 +27,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.classcompiler.compiler.CompilerFactory;
 import org.classcompiler.compiler.CompilerFileManager;
 import org.classcompiler.compiler.Compilers;
 import org.classcompiler.compiler.JavaSource;
+import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,6 +43,21 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 public class ClassCompilerController {
 
+    @RequestMapping(value = "/upload", method = RequestMethod.POST)
+    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) throws Exception {
+	try (final CompilerFileManager cfm = new CompilerFileManager(new EclipseCompiler())) {
+	    final String fullyQualifiedName = file.getOriginalFilename().replace("/", ".");
+	    if (fullyQualifiedName.endsWith(".jar")) { // handle jar
+		// TODO jar unpack + load support
+	    } else if (fullyQualifiedName.endsWith(".class")) { // handle class
+		cfm.addClass(fullyQualifiedName, file.getBytes(), true);
+	    } else {
+		throw new UnsupportedOperationException("Unsupported file format { not jar / class }.");
+	    }
+	}
+	return new ResponseEntity<>("Success", HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/compile", method = RequestMethod.POST)
     public ResponseEntity<Map<String, byte[]>> compile(@RequestBody Collection<JavaCompileRequest> jcrs)
 	    throws IOException {
@@ -51,19 +66,5 @@ public class ClassCompilerController {
 	    sources.add(new JavaSource(jcr.getFullyQualifiedClassName(), jcr.getJavaSource()));
 	}
 	return new ResponseEntity<>(Compilers.compile(sources), HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/upload", method = RequestMethod.POST)
-    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) throws Exception {
-	final CompilerFileManager cfm = CompilerFactory.compilerFileManager();
-	final String fullyQualifiedName = file.getOriginalFilename().replace("/", ".");
-	if (fullyQualifiedName.endsWith(".jar")) { // handle jar
-	    // TODO jar unpack + load support
-	} else if (fullyQualifiedName.endsWith(".class")) { // handle class
-	    cfm.addToClasspath(fullyQualifiedName.substring(0, fullyQualifiedName.length() - 6), file.getBytes());
-	} else {
-	    throw new UnsupportedOperationException("Unsupported file format { not jar / class }.");
-	}
-	return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 }
