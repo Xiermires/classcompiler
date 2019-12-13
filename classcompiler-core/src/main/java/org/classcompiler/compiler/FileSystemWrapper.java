@@ -75,7 +75,7 @@ public class FileSystemWrapper extends ForwardingFileSystem {
 	    fullyQualifiedName += kind.extension;
 	} else {
 	    if (fullyQualifiedName.indexOf('/') == -1) {
-		fullyQualifiedName = fullyQualifiedName.substring(0, fullyQualifiedName.length() - 6).replace('.', '/')
+		fullyQualifiedName = fullyQualifiedName.substring(0, fullyQualifiedName.length() - kind.extension.length()).replace('.', '/')
 			+ kind.extension;
 	    }
 	}
