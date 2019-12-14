@@ -21,12 +21,18 @@
  *******************************************************************************/
 package org.classcompiler.springboot.rest;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.classcompiler.compiler.CompilerFileManager;
 import org.classcompiler.compiler.Compilers;
 import org.classcompiler.compiler.JavaSource;
@@ -43,19 +49,62 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 public class ClassCompilerController {
 
+    @RequestMapping("/")
+    public String root() {
+	return "index.html";
+    }
+
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
     public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) throws Exception {
 	try (final CompilerFileManager cfm = new CompilerFileManager(new EclipseCompiler())) {
 	    final String fullyQualifiedName = file.getOriginalFilename().replace("/", ".");
 	    if (fullyQualifiedName.endsWith(".jar")) { // handle jar
-		// TODO jar unpack + load support
+		for (Entry<String, byte[]> entry : unzip(file)) {
+		    cfm.getFileSystemWrapper().addClass(entry.getKey(), entry.getValue(), true);
+		}
 	    } else if (fullyQualifiedName.endsWith(".class")) { // handle class
 		cfm.getFileSystemWrapper().addClass(fullyQualifiedName, file.getBytes(), true);
+	    } else if (fullyQualifiedName.endsWith(".java")) {
+		cfm.getFileSystemWrapper().addSource(fullyQualifiedName, new String(file.getBytes()), true);
 	    } else {
 		throw new UnsupportedOperationException("Unsupported file format { not jar / class }.");
 	    }
 	}
 	return new ResponseEntity<>("Success", HttpStatus.OK);
+    }
+
+    private List<Entry<String, byte[]>> unzip(MultipartFile file) throws IOException {
+	final List<Entry<String, byte[]>> entries = new ArrayList<>();
+	final ByteArrayInputStream bais = new ByteArrayInputStream(file.getBytes());
+	try (ZipInputStream zipIn = new ZipInputStream(bais)) {
+	    ZipEntry ze;
+	    while ((ze = zipIn.getNextEntry()) != null) {
+		if (!ze.isDirectory() && ze.getName().endsWith(".class")) {
+		    final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		    final String filename = ze.getName();
+		    IOUtils.copy(zipIn, baos);
+		    entries.add(new Entry<String, byte[]>() {
+			@Override
+			public String getKey() {
+			    return filename;
+			}
+
+			@Override
+			public byte[] getValue() {
+			    return baos.toByteArray();
+			}
+
+			@Override
+			public byte[] setValue(byte[] value) {
+			    throw new UnsupportedOperationException("not supported");
+			}
+
+		    });
+		}
+		zipIn.closeEntry();
+	    }
+	}
+	return entries;
     }
 
     @RequestMapping(value = "/compile", method = RequestMethod.POST)

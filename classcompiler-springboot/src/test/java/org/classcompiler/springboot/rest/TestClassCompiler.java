@@ -42,6 +42,8 @@ import kong.unirest.Unirest;
 
 public class TestClassCompiler {
 
+    private static String connectionUrl = "http://localhost:8080";
+
     @BeforeClass
     public static void pre() throws Exception {
 	ClassCompiler.main();
@@ -56,7 +58,7 @@ public class TestClassCompiler {
 
 	final JavaCompileRequest jcr = JavaCompileRequest.of(fullyQualifiedName, javaSource);
 
-	final HttpResponse<String> res = Unirest.post("http://localhost:8080/compile")//
+	final HttpResponse<String> res = Unirest.post(connectionUrl + "/compile")//
 		.header("Content-Type", "application/json")//
 		.body(Collections.singletonList(jcr))//
 		.asString();
@@ -71,7 +73,7 @@ public class TestClassCompiler {
 	for (Entry<String, byte[]> entry : Compilers
 		.compile(Collections.singletonList(new JavaSource(fullyQualifiedName, javaSource))).entrySet()) {
 	    final MultipartBody req = Unirest//
-		    .post("http://localhost:8080/upload")//
+		    .post(connectionUrl + "/upload")//
 		    .field("file", new ByteArrayInputStream(entry.getValue()), entry.getKey() + ".class");
 	    final HttpResponse<?> res = req.asEmpty();
 	    assertThat(res.getStatus(), is(200));
